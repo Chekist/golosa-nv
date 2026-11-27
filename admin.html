@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Панель управления — Голоса Нижневартовска</title>
+<meta name="theme-color" content="#8c3b2e">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .tabs button{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 18px;cursor:pointer;font-family:inherit;font-size:1rem}
+  .tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .panel{display:none}
+  .panel.on{display:block}
+  .row-item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:10px;gap:10px}
+  .row-item b{flex:1}
+  .mini{padding:6px 14px;font-size:.9rem}
+  .danger{background:#7a2a20}
+  form .cols{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .stat{font-size:.9rem;color:var(--gold);font-weight:bold}
+  #loginBox{max-width:420px;margin:60px auto}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>ГОЛОСА НИЖНЕВАРТОВСКА</h1>
+  <p>Панель управления порталом: точки карты, архив, сообщения, настройки</p>
+</header>
+<nav>
+  <a href="index.html">Главная</a>
+  <a href="map.html">Карта памяти</a>
+  <a href="archive.html">Архив</a>
+  <a href="admin.html" class="active">Админка</a>
+</nav>
+<main>
+  <!-- ВХОД -->
+  <div id="loginBox" class="card">
+    <h3>Вход в панель управления</h3>
+    <form onsubmit="return doLogin(event)">
+      <label>Пароль</label>
+      <input type="password" id="pwd" required placeholder="По умолчанию: golosa2027">
+      <button class="btn" type="submit">Войти</button>
+      <p id="loginErr" class="muted" style="margin-top:10px"></p>
+    </form>
+  </div>
+
+  <!-- ПАНЕЛЬ -->
+  <div id="adminPanel" style="display:none">
+    <div class="tabs">
+      <button class="on" data-tab="points">Точки карты</button>
+      <button data-tab="archive">Архив</button>
+      <button data-tab="msgs">Сообщения <span class="stat" id="msgCount"></span></button>
+      <button data-tab="marks">Отметки на карте <span class="stat" id="marksCount"></span></button>
+      <button data-tab="settings">Настройки</button>
+    </div>
+
+    <div class="panel on" id="tab-points">
+      <h3 style="margin-bottom:12px">Точки карты памяти</h3>
+      <div id="pointsList"></div>
+      <div class="card" style="margin-top:16px">
+        <h3 id="pointFormTitle">Добавить точку</h3>
+        <form onsubmit="return savePoint(event)">
+          <input type="hidden" id="p_id">
+          <div class="cols">
+            <div><label>Название</label><input id="p_title" required></div>
+            <div><label>Год / период</label><input id="p_year" placeholder="1972"></div>
+          </div>
+          <div class="cols">
+            <div><label>Широта (lat)</label><input id="p_lat" required placeholder="60.9397"></div>
+            <div><label>Долгота (lon)</label><input id="p_lon" required placeholder="76.5694"></div>
+          </div>
+          <div class="cols">
+            <div><label>Категория</label>
+              <select id="p_cat">
+                <option value="sela">Старое село</option>
+                <option value="neft">Нефтяной город</option>
+                <option value="culture">Культура и город</option>
+                <option value="people">Люди города</option>
+              </select></div>
+            <div><label>Картинка (assets/img/...)</label><input id="p_img" placeholder="pier-1909.jpg"></div>
+          </div>
+          <label>Номер в маршруте (пусто — не входит)</label><input id="p_route" type="number" min="1" max="20">
+          <label>Описание</label><textarea id="p_text" rows="3" required></textarea>
+          <button class="btn" type="submit">Сохранить точку</button>
+          <button class="btn" type="button" style="background:#7a7264" onclick="resetPointForm()">Очистить</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel" id="tab-archive">
+      <h3 style="margin-bottom:12px">Записи архива</h3>
+      <div id="archList"></div>
+      <div class="card" style="margin-top:16px">
+        <h3 id="archFormTitle">Добавить запись</h3>
+        <form onsubmit="return saveArch(event)">
+          <input type="hidden" id="a_id">
+          <div class="cols">
+            <div><label>Заголовок</label><input id="a_title" required></div>
+            <div><label>Мета (кто · длительность)</label><input id="a_meta" placeholder="Ветеран труда · 25 мин"></div>
+          </div>
+          <div class="cols">
+            <div><label>Тип</label>
+              <select id="a_cat">
+                <option value="audio">Аудиоинтервью</option>
+                <option value="photo">Фотоархив</option>
+                <option value="doc">Документ</option>
+              </select></div>
+            <div><label>Картинка (assets/img/...)</label><input id="a_img" placeholder="family.jpg"></div>
+          </div>
+          <div class="cols">
+            <div><label>Аудио (assets/media/...)</label><input id="a_media" placeholder="demo-interview.wav"></div>
+            <div><label>Видео URL (mp4 или YouTube)</label><input id="a_video" placeholder="https://.../video.mp4"></div>
+          </div>
+          <label>Описание</label><textarea id="a_text" rows="3" required></textarea>
+          <button class="btn" type="submit">Сохранить запись</button>
+          <button class="btn" type="button" style="background:#7a7264" onclick="resetArchForm()">Очистить</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="panel" id="tab-msgs">
+      <h3 style="margin-bottom:12px">Сообщения с формы «Контакты»</h3>
+      <div id="msgsList"></div>
+      <button class="btn danger" style="margin-top:12px" onclick="clearMsgs()">Очистить все сообщения</button>
+    </div>
+
+    <div class="panel" id="tab-marks">
+      <h3 style="margin-bottom:12px">Отметки жителей (с карты)</h3>
+      <div id="marksAdmin"></div>
+      <button class="btn danger" style="margin-top:12px" onclick="clearMarksAdmin()">Очистить все отметки</button>
+    </div>
+
+    <div class="panel" id="tab-settings">
+      <div class="card" style="max-width:520px">
+        <h3>Настройки</h3>
+        <form onsubmit="return saveSettings(event)">
+          <label>Пароль админки</label><input id="s_pwd" placeholder="Новый пароль">
+          <label>Email для заявок (кнопка «написать» в форме)</label><input id="s_email" placeholder="project@school-nv.ru">
+          <button class="btn" type="submit">Сохранить</button>
+        </form>
+        <hr style="margin:18px 0;border:none;border-top:1px solid var(--line)">
+        <button class="btn danger" onclick="resetAll()">Сбросить все изменения (вернуть демо-данные)</button>
+      </div>
+    </div>
+  </div>
+</main>
+<footer><b>«Голоса Нижневартовска»</b> · панель управления · 2026–2027</footer>
+<script src="data/points.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

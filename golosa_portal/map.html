@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Карта памяти — Голоса Нижневартовска</title>
+<meta name="theme-color" content="#8c3b2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  .leaflet-attribution-flag{display:none !important;}
+  #lmap{height:520px;border-radius:10px;z-index:1}
+  .leaflet-popup-content{width:260px;margin:12px}
+  .pop-img{width:100%;border-radius:8px;margin-bottom:8px}
+  .pop-cat{font-size:.75rem;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;font-weight:bold}
+  .pop-year{font-size:.8rem;color:#7a7264}
+  .legend{position:absolute;bottom:24px;right:12px;z-index:500;background:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:.85rem}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px}
+  .map-btns{position:absolute;top:12px;right:12px;z-index:500;display:flex;gap:8px}
+  .map-btns .btn{padding:8px 16px;font-size:.9rem}
+  .map-wrap{position:relative}
+  .mark-form input,.mark-form textarea{width:100%;padding:7px;margin-bottom:7px;border:1px solid #ddd;border-radius:6px;font-family:inherit;box-sizing:border-box}
+  .mark-form button{padding:7px 14px;border:none;border-radius:6px;cursor:pointer;font-family:inherit}
+  .mark-item{border-left:3px solid #2b2620}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>ГОЛОСА НИЖНЕВАРТОВСКА</h1>
+  <p>Исторические точки Нижневартовска на собственной интерактивной карте: фотографии, маршрут экскурсии и отметки жителей</p>
+  <span class="badge">Цифровая карта памяти города</span>
+</header>
+<nav>
+  <a href="index.html">Главная</a>
+  <a href="about.html">О проекте</a>
+  <a href="history.html">История города</a>
+  <a href="map.html">Карта памяти</a>
+  <a href="archive.html">Архив</a>
+  <a href="team.html">Команда</a>
+  <a href="contacts.html">Контакты</a>
+  <a href="install.html">Установить приложение</a>
+</nav>
+<main>
+  <h2>Карта памяти</h2>
+  <div class="filter-bar" id="filters">
+    <button class="on" data-cat="all">Все точки</button>
+    <button data-cat="sela">Старое село</button>
+    <button data-cat="neft">Нефтяной город</button>
+    <button data-cat="culture">Культура и город</button>
+    <button data-cat="people">Люди города</button>
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 2fr">
+    <div>
+      <div id="points"></div>
+      <h3 style="margin:18px 0 10px">Отметки жителей</h3>
+      <div id="marksList"></div>
+    </div>
+    <div class="map-wrap">
+      <div class="map-btns">
+        <button class="btn" id="routeBtn">Маршрут экскурсии</button>
+        <button class="btn" id="markBtn" style="background:#2b2620">&#10010; Добавить отметку</button>
+      </div>
+      <div id="lmap"></div>
+      <div class="legend">
+        <div><i style="background:#8c3b2e"></i>Старое село</div>
+        <div><i style="background:#3a6b4f"></i>Нефтяной город</div>
+        <div><i style="background:#55617a"></i>Культура и город</div>
+        <div><i style="background:#7a5230"></i>Люди города</div>
+        <div><i style="background:#2b2620;border-radius:2px"></i>Отметки жителей</div>
+      </div>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:14px">Подложка — OpenFreeMap / OpenStreetMap France / Esri (автопереключение при недоступности). Точки добавляются в админке (admin.html), отметки жителей — прямо на карте. Без интернета доступны списки и тексты.</p>
+</main>
+<footer><b>&laquo;Голоса Нижневартовска&raquo;</b> &middot; социально-ориентированный проект &middot; 2026&ndash;2027</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="data/points.js"></script>
+<script>
+const CAT = {sela:{label:'Старое село', color:'#8c3b2e'}, neft:{label:'Нефтяной город', color:'#3a6b4f'},
+             culture:{label:'Культура и город', color:'#55617a'}, people:{label:'Люди города', color:'#7a5230'}};
+
+// Фильтр: вырезаем эмодзи-флаги (последовательности региональных индикаторов, напр. украинский флаг) из любых текстов
+const clean = s => String(s == null ? '' : s)
+  .replace(/[\u{1F1E6}-\u{1F1FF}]{2}\uFE0F?/gu, '')
+  .replace(/\u{1F3F3}\uFE0F?\u200D\u{1F308}\uFE0F?/gu, '');
+
+let POINTS_LIVE = (JSON.parse(localStorage.getItem('nv_points') || 'null') || POINTS)
+  .map(p => ({...p, title: clean(p.title), year: clean(p.year), text: clean(p.text)}));
+
+const map = L.map('lmap', {attributionControl: false}).setView([60.9397, 76.5694], 13);
+L.control.attribution({prefix: ''}).addAttribution('&copy;OpenStreetMap').addTo(map);
+// Подложка с автопереключением: если источник недоступен — берём следующий (все бесплатные, без API-ключа)
+const TILE_SOURCES = [
+  {url:'https://tiles.openfreemap.org/styles/positron/{z}/{x}/{y}.png', attr:'&copy;OpenFreeMap &copy;OpenStreetMap'},
+  {url:'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', sub:['a','b','c'], attr:'&copy;OpenStreetMap France &copy;OpenStreetMap'},
+  {url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attr:'Esri &copy;OpenStreetMap'}
+];
+let baseLayer = null, tileErrors = 0, srcIdx = 0;
+function setBaseLayer(i){
+  if (baseLayer) map.removeLayer(baseLayer);
+  srcIdx = i; tileErrors = 0;
+  const s = TILE_SOURCES[i];
+  baseLayer = L.tileLayer(s.url, {maxZoom:19, subdomains:s.sub || 'abc', attribution:s.attr});
+  baseLayer.on('tileerror', () => {
+    tileErrors++;
+    if (tileErrors > 6 && srcIdx < TILE_SOURCES.length - 1) setBaseLayer(srcIdx + 1);
+  });
+  baseLayer.addTo(map);
+  document.querySelector('.leaflet-control-attribution').innerHTML = s.attr;
+}
+setBaseLayer(0);
+
+let markers = [], routeLine = null, markMarkers = [];
+function markerIcon(color){
+  return L.divIcon({className:'', html:'<div style="background:'+color+';width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>', iconSize:[26,26], iconAnchor:[13,26], popupAnchor:[0,-26]});
+}
+
+function renderPoints(cat){
+  document.getElementById('points').innerHTML = '';
+  markers.forEach(m => map.removeLayer(m)); markers = [];
+  if (routeLine){ map.removeLayer(routeLine); routeLine = null; document.getElementById('routeBtn').textContent='Маршрут экскурсии'; }
+  POINTS_LIVE.filter(p => cat==='all' || p.category===cat).forEach(p => {
+    const c = CAT[p.category].color;
+    const popup = '<img class="pop-img" src="assets/img/'+p.img+'" alt="">'+
+      '<div class="pop-cat">'+CAT[p.category].label+' &middot; точка '+p.id+'</div>'+
+      '<b>'+clean(p.title)+'</b><br><span class="pop-year">'+clean(p.year)+'</span>'+
+      '<p style="margin-top:6px">'+clean(p.text)+'</p>';
+    const mk = L.marker(p.coords, {icon: markerIcon(c)}).addTo(map).bindPopup(popup);
+    markers.push(mk);
+    const div = document.createElement('div');
+    div.className = 'point';
+    div.innerHTML = '<small>Точка '+p.id+' &middot; '+p.year+' &middot; '+CAT[p.category].label+'</small>'+
+      '<h4>'+clean(p.title)+'</h4><p>'+clean(p.text)+'</p>';
+    div.addEventListener('click', () => {
+      map.flyTo(p.coords, 16, {duration:.8});
+      setTimeout(() => mk.openPopup(), 850);
+    });
+    document.getElementById('points').appendChild(div);
+  });
+}
+renderPoints('all');
+
+document.getElementById('filters').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#filters button').forEach(b => b.classList.remove('on'));
+  e.target.classList.add('on');
+  renderPoints(e.target.dataset.cat);
+});
+
+document.getElementById('routeBtn').addEventListener('click', () => {
+  if (routeLine){ map.removeLayer(routeLine); routeLine = null; document.getElementById('routeBtn').textContent='Маршрут экскурсии'; return; }
+  const route = POINTS_LIVE.filter(p => p.route).sort((a,b)=>a.route-b.route);
+  if (route.length < 2){ alert('Маршрут пока не настроен (дайте точкам номера в админке).'); return; }
+  routeLine = L.polyline(route.map(p => p.coords), {color:'#8c3b2e', weight:5, dashArray:'10 8', opacity:.85}).addTo(map);
+  route.forEach((p,i) => {
+    L.marker(p.coords, {icon: L.divIcon({className:'', html:'<div style="background:#2b2620;color:#f5f1e8;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:bold 13px Georgia;border:2px solid #fff">'+(i+1)+'</div>', iconSize:[24,24], iconAnchor:[12,12]})}).addTo(map).bindPopup('<b>'+(i+1)+'. '+p.title+'</b>');
+  });
+  map.fitBounds(routeLine.getBounds(), {padding:[40,40]});
+  document.getElementById('routeBtn').textContent='Скрыть маршрут';
+});
+
+/* ---------- Отметки жителей ---------- */
+async function loadMarks(){
+  let server = [];
+  try { server = await fetch('/api/marks').then(r => r.ok ? r.json() : []); } catch {}
+  return [...server, ...JSON.parse(localStorage.getItem('nv_marks') || '[]')];
+}
+function renderMarks(marks){
+  markMarkers.forEach(m => map.removeLayer(m)); markMarkers = [];
+  const box = document.getElementById('marksList');
+  box.innerHTML = marks.length ? '' : '<p class="muted">Пока нет отметок. Нажмите &laquo;&#10010; Добавить отметку&raquo; и кликните по карте.</p>';
+  marks.forEach(m => {
+    const mk = L.marker(m.coords, {icon: L.divIcon({className:'', html:'<div style="background:#2b2620;color:#f5f1e8;width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font:bold 14px Georgia;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)">&#9998;</div>', iconSize:[24,24], iconAnchor:[12,12]})}).addTo(map)
+      .bindPopup('<b>'+clean(m.title)+'</b><p style="margin-top:4px">'+clean(m.text||'')+'</p><span class="pop-year">'+clean(m.author||'житель города')+'</span>');
+    markMarkers.push(mk);
+    const div = document.createElement('div');
+    div.className = 'point mark-item';
+    div.innerHTML = '<small>Отметка жителя</small><h4>'+m.title+'</h4><p>'+(m.text||'')+'</p>';
+    div.addEventListener('click', () => { map.flyTo(m.coords, 16, {duration:.8}); setTimeout(()=>mk.openPopup(), 850); });
+    box.appendChild(div);
+  });
+}
+let marksCache = [];
+loadMarks().then(m => { marksCache = m; renderMarks(m); });
+
+let markMode = false, tempMark = null;
+document.getElementById('markBtn').addEventListener('click', function(){
+  markMode = !markMode;
+  this.textContent = markMode ? 'Кликните по карте…' : '+ Добавить отметку';
+  this.style.background = markMode ? '#8c3b2e' : '#2b2620';
+  map.getContainer().style.cursor = markMode ? 'crosshair' : '';
+});
+
+map.on('click', e => {
+  if (!markMode) return;
+  if (tempMark) map.removeLayer(tempMark);
+  tempMark = L.marker(e.latlng, {icon: markerIcon('#2b2620')}).addTo(map);
+  const formHtml = '<div class="mark-form"><b>Ваша отметка на карте</b>'+
+    '<input id="mk_title" placeholder="Название (например: Дом моей бабушки)">'+
+    '<textarea id="mk_text" rows="2" placeholder="Пара слов об этом месте…"></textarea>'+
+    '<input id="mk_author" placeholder="Ваше имя (необязательно)">'+
+    '<button style="background:#8c3b2e;color:#fff" onclick="saveMark('+e.latlng.lat+','+e.latlng.lng+')">Сохранить</button></div>';
+  tempMark.bindPopup(formHtml).openPopup();
+});
+
+async function saveMark(lat, lng){
+  const m = { id: Date.now(), title: clean(document.getElementById('mk_title').value.trim()),
+              text: clean(document.getElementById('mk_text').value.trim()),
+              author: clean(document.getElementById('mk_author').value.trim()),
+              coords: [lat, lng], date: new Date().toLocaleString('ru-RU') };
+  if (!m.title){ alert('Введите название отметки.'); return; }
+  let serverSaved = false;
+  try { serverSaved = (await fetch('/api/marks', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(m)})).ok; } catch {}
+  if (!serverSaved){
+    const local = JSON.parse(localStorage.getItem('nv_marks') || '[]');
+    local.push(m); localStorage.setItem('nv_marks', JSON.stringify(local));
+  }
+  map.closePopup(); if (tempMark){ map.removeLayer(tempMark); tempMark = null; }
+  markMode = false;
+  const btn = document.getElementById('markBtn');
+  btn.textContent = '+ Добавить отметку'; btn.style.background = '#2b2620';
+  map.getContainer().style.cursor = '';
+  marksCache = await loadMarks(); renderMarks(marksCache);
+}
+</script>
+<script src="js/main.js"></script>
+</body>
+</html>

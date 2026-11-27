@@ -1,0 +1,76 @@
+/* ===== Голоса Нижневартовска — общие стили ===== */
+:root{
+  --bg:#f5f1e8; --ink:#2b2620; --accent:#8c3b2e; --gold:#b8860b;
+  --card:#ffffff; --line:#e0d8c8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--ink);line-height:1.6}
+img{max-width:100%}
+a{color:var(--accent)}
+
+/* Шапка */
+.hero{background:linear-gradient(rgba(43,38,32,.86),rgba(43,38,32,.86)),url('../assets/img/city-hero.jpg') center/cover;color:#fff;text-align:center;padding:80px 20px 60px}
+.hero h1{font-size:2.4rem;letter-spacing:.05em;margin-bottom:12px}
+.hero p{font-size:1.1rem;max-width:760px;margin:0 auto 16px}
+.badge{display:inline-block;border:1px solid #fff;border-radius:20px;padding:5px 16px;font-size:.85rem;margin:4px}
+
+/* Навигация */
+nav{position:sticky;top:0;background:var(--ink);display:flex;justify-content:center;flex-wrap:wrap;z-index:20}
+nav a{color:#f5f1e8;text-decoration:none;padding:13px 18px;font-size:.95rem}
+nav a:hover,nav a.active{background:var(--accent)}
+
+/* Контент */
+main{max-width:1100px;margin:0 auto;padding:50px 20px;min-height:60vh}
+h2{color:var(--accent);border-bottom:2px solid var(--gold);padding-bottom:8px;margin-bottom:24px;font-size:1.6rem}
+h3{margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:22px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.num{font-size:2rem;color:var(--gold);font-weight:bold}
+ul{padding-left:20px}
+.btn{display:inline-block;background:var(--accent);color:#fff;padding:11px 26px;border-radius:8px;text-decoration:none;border:none;cursor:pointer;font-family:inherit;font-size:1rem}
+.btn:hover{background:#6e2f24}
+.muted{color:#7a7264;font-size:.92rem}
+
+/* Таймлайн */
+.timeline{border-left:3px solid var(--gold);padding-left:22px}
+.timeline div{margin-bottom:18px;position:relative}
+.timeline div::before{content:"";position:absolute;left:-29px;top:6px;width:12px;height:12px;background:var(--accent);border-radius:50%}
+.timeline b{color:var(--accent)}
+
+/* Формы */
+form input,form textarea,form select{width:100%;padding:10px;margin-bottom:12px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:1rem}
+label{font-size:.95rem;display:block;margin-bottom:4px}
+
+/* Карта */
+.map-wrap{border-radius:10px;overflow:hidden;border:1px solid var(--line);box-shadow:0 2px 6px rgba(0,0,0,.08)}
+iframe{width:100%;height:520px;border:0;display:block}
+.point{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:12px;cursor:pointer;transition:.2s}
+.point:hover{border-color:var(--accent)}
+.point small{color:var(--gold);font-weight:bold;text-transform:uppercase;letter-spacing:.05em}
+.point h4{margin:4px 0 6px}
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+.filter-bar button{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:7px 16px;cursor:pointer;font-family:inherit}
+.filter-bar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Архив */
+.arch-card .tags{margin:8px 0}
+.tag{display:inline-block;background:#efe7d7;border-radius:12px;padding:2px 10px;font-size:.8rem;margin:2px}
+audio{width:100%;margin-top:8px}
+
+/* Команда */
+.avatar{width:84px;height:84px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.6rem;font-weight:bold;background:var(--accent)}
+.team .card{text-align:center}
+.role{color:var(--gold);font-size:.9rem;margin-bottom:8px}
+
+footer{background:var(--ink);color:#d8d2c4;text-align:center;padding:28px 20px;font-size:.9rem}
+footer b{color:#fff}
+
+
+/* Модальное окно просмотра архива */
+.modal{display:none;position:fixed;inset:0;background:rgba(43,38,32,.75);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal.open{display:flex}
+.modal-card{animation:mpop .25s ease;background:#fff;border-radius:12px;max-width:640px;width:100%;max-height:90vh;overflow:auto;padding:24px;position:relative}
+.modal-card img{width:100%;border-radius:8px;margin-bottom:14px}
+.modal-close{position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.6rem;cursor:pointer;color:#8c3b2e}
+
+@keyframes mpop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}

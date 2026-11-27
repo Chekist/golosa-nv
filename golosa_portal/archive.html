@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Архив — Голоса Нижневартовска</title>
+<link rel="stylesheet" href="css/style.css">
+<meta name="theme-color" content="#8c3b2e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+</head>
+<body>
+<header class="hero">
+  <h1>ГОЛОСА НИЖНЕВАРТОВСКА</h1>
+  <p>Устная история города: записи, фотографии, документы.</p>
+  <span class="badge">Цифровая карта памяти города</span>
+  <span class="badge">Социально-ориентированный проект</span>
+  <span class="badge">2026/2027</span>
+</header>
+<nav>
+  <a href="index.html">Главная</a>
+  <a href="about.html">О проекте</a>
+  <a href="history.html">История города</a>
+  <a href="map.html">Карта памяти</a>
+  <a href="archive.html">Архив</a>
+  <a href="team.html">Команда</a>
+  <a href="contacts.html">Контакты</a>
+  <a href="install.html">Установить приложение</a>
+</nav>
+<main>
+<h2>Архив интервью и фотографий</h2>
+  <div class="filter-bar" id="archFilters">
+    <button class="on" data-cat="all">Все</button>
+    <button data-cat="audio">Аудиоинтервью</button>
+    <button data-cat="photo">Фотоархив</button>
+    <button data-cat="doc">Документы</button>
+  </div>
+  <div class="grid" id="archGrid"></div>
+  <p class="muted" style="margin-top:18px">Записи и сканы добавляются по мере прохождения этапа сбора материала (январь–март 2027).</p>
+</main>
+<footer>
+  <b>«Голоса Нижневартовска»</b> · социально-ориентированный проект, 2026–2027<br>
+  Шульга Валерия · Брежнев Даниил · Марченко Алина
+</footer>
+<div class="modal" id="archModal" onclick="if(event.target===this)closeArch()">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeArch()">&times;</button>
+    <img id="am_img" src="" alt="">
+    <p class="role" id="am_meta"></p>
+    <h3 id="am_title"></h3>
+    <div id="am_media"></div>
+    <p id="am_text"></p>
+  </div>
+</div>
+<script>
+function openArch(id){
+  const items = window.ARCH_ITEMS || [];
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  document.getElementById('am_img').src = 'assets/img/' + it.img;
+  document.getElementById('am_meta').textContent = clean(it.meta);
+  document.getElementById('am_title').textContent = clean(it.title);
+  document.getElementById('am_text').textContent = clean(it.text);
+  document.getElementById('am_media').innerHTML =
+    (it.media ? '<audio controls autoplay src="assets/media/'+it.media+'" style="width:100%;margin:12px 0"></audio>' : '') +
+    (it.video ? '<video controls autoplay src="'+it.video+'" style="width:100%;border-radius:8px;margin:12px 0"></video>' : '');
+  document.getElementById('archModal').classList.add('open');
+}
+function closeArch(){ document.getElementById('archModal').classList.remove('open'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeArch(); });
+</script>
+
+<script src="js/main.js"></script>
+</body>
+</html>
